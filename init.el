@@ -5,6 +5,14 @@
           (lambda () (setq gc-cons-threshold (* 64 1024 1024))))
 (setq read-process-output-max (* 1024 1024)) ; faster LSP communication
 
+;;;; PATH: the daemon starts from systemd, so add dirs set only in ~/.bashrc
+(dolist (dir '("~/.local/bin" "~/.cargo/bin" "~/.opam/default/bin"
+               "~/go/bin" "~/Downloads/go/bin"))
+  (let ((dir (expand-file-name dir)))
+    (when (and (file-directory-p dir) (not (member dir exec-path)))
+      (add-to-list 'exec-path dir t)
+      (setenv "PATH" (concat (getenv "PATH") path-separator dir)))))
+
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (load custom-file 'noerror 'nomessage)
 

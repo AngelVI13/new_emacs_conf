@@ -1,0 +1,17 @@
+# Emacs daemon, started with the WSL user session (requires linger).
+# Install: systemctl --user enable --now ~/.emacs.d/emacs.service
+[Unit]
+Description=Emacs daemon
+Documentation=info:emacs
+
+[Service]
+# Emacs here is built without libsystemd, so Type=notify is not supported
+Type=simple
+# Login shell so ~/.profile sets PATH and the opam environment
+ExecStart=/bin/bash -lc 'exec %h/.local/bin/emacs --fg-daemon'
+Environment=WAYLAND_DISPLAY=wayland-0 DISPLAY=:0
+SuccessExitStatus=15
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
