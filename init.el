@@ -95,13 +95,36 @@
 (setq go-ts-mode-indent-offset 4)
 (add-hook 'go-ts-mode-hook (lambda () (setq-local indent-tabs-mode t)))
 
-;;;; Completion (native)
+;;;; Completion
 (fido-vertical-mode 1)                ; minibuffer: files, buffers, commands
-(global-completion-preview-mode 1)    ; inline ghost-text, TAB accepts
 (setq completions-format 'one-column
       completions-max-height 15
       completion-show-help nil
       completion-auto-select 'second-tab)
+
+;; In-buffer popup that opens as you type (like nvim-cmp)
+(use-package corfu
+  :init
+  (setq corfu-auto t
+        corfu-auto-prefix 3           ; after 3 characters...
+        corfu-auto-trigger "."        ; ...or right after a dot
+        corfu-auto-delay 0.1
+        corfu-preselect 'first        ; RET accepts the first candidate
+        corfu-preview-current nil     ; never insert a candidate implicitly
+        corfu-cycle t
+        corfu-popupinfo-delay '(0.5 . 0.2))
+  :config
+  ;; Evil's insert keys for jk and backspace should also trigger completion
+  (with-eval-after-load 'corfu-auto
+    (add-to-list 'corfu-auto-commands 'my/evil-insert-jk)
+    (add-to-list 'corfu-auto-commands 'evil-delete-backward-char-and-join))
+  (global-corfu-mode 1)
+  (corfu-popupinfo-mode 1)            ; documentation popup next to the list
+  (with-eval-after-load 'evil
+    (evil-define-key 'insert corfu-map
+      (kbd "C-e") #'corfu-quit
+      (kbd "C-f") #'corfu-popupinfo-scroll-up
+      (kbd "C-b") #'corfu-popupinfo-scroll-down)))
 
 ;; Buffer words as a fallback source (like cmp-buffer)
 (defun my/add-dabbrev-capf ()
@@ -118,6 +141,61 @@
       grep-command "rg -nH --no-heading "
       dired-listing-switches "-alh --group-directories-first"
       dired-kill-when-opening-new-dired-buffer t)
+
+;; Known projects: remembered when a file/dir inside them is opened,
+;; switched with SPC p p (straight into find-file)
+(setq project-switch-commands #'project-find-file
+      project-list-exclude '("/\\.emacs\\.d/elpa/" "\\`/tmp/"))
+
+(defun my/remember-project ()
+  (when-let* ((pr (project-current)))
+    (project-remember-project pr)))
+(add-hook 'find-file-hook #'my/remember-project)
+(add-hook 'dired-mode-hook #'my/remember-project)
+
+;; Live search with preview (works with fido-vertical-mode)
+(use-package consult
+  :config
+  ;; Whole input goes to rg; trailing -flags are passed through (hello -tpy)
+  (setq consult-async-split-style nil)
+
+  ;; Allow "quoted phrases": "hello world" -tpy -> hello\ world -tpy
+  (defun my/consult-unquote-input (split)
+    (cons (replace-regexp-in-string
+           "\"\\([^\"]*\\)\""
+           (lambda (m) (string-replace " " "\\ " (match-string 1 m)))
+           (car split) t t)
+          (cdr split)))
+  (advice-add 'consult--command-split :filter-return #'my/consult-unquote-input)
+
+  ;; No live preview: only RET opens the selected candidate
+  (setq consult-preview-key nil)
+
+  ;; C-c C-e in consult-ripgrep: save the results to a grep buffer
+  ;; (navigate with RET, SPC o reopens it, g re-runs the search)
+  (defvar my/consult-grep-active nil)
+  (advice-add 'consult-ripgrep :around
+              (lambda (fn &rest args)
+                (let ((my/consult-grep-active t)) (apply fn args))))
+
+  (defun my/consult-grep-export ()
+    "Run the current `consult-ripgrep' search in a `grep-mode' buffer."
+    (interactive)
+    (unless my/consult-grep-active
+      (user-error "Export is only available in consult-ripgrep"))
+    (let* ((input (minibuffer-contents-no-properties))
+           (dir default-directory)
+           (cmd (remove "--null"
+                        (car (funcall (consult--ripgrep-make-builder '(".")) input)))))
+      (run-at-time 0 nil
+                   (lambda ()
+                     (require 'grep)
+                     (let ((default-directory dir))
+                       (compilation-start (mapconcat #'shell-quote-argument cmd " ")
+                                          #'grep-mode
+                                          (lambda (_) (format "*grep: %s*" input))))))
+      (abort-recursive-edit)))
+  (define-key minibuffer-local-map (kbd "C-q") #'my/consult-grep-export))
 
 ;;;; Spell checking
 (when (executable-find "aspell")
@@ -314,12 +392,6 @@
       (find-file file)
     (message "Harpoon slot %d is empty" n)))
 
-(defun my/harpoon-cycle (step)
-  (when my/harpoon-files
-    (let* ((len (length my/harpoon-files))
-           (pos (or (seq-position my/harpoon-files buffer-file-name) -1)))
-      (find-file (nth (mod (+ pos step) len) my/harpoon-files)))))
-
 (define-derived-mode my/harpoon-menu-mode text-mode "Harpoon"
   "Edit the list of harpooned files; one file per line.")
 
@@ -436,8 +508,8 @@
     (kbd "<leader>[")  #'flymake-goto-prev-error
     (kbd "<leader>]")  #'flymake-goto-next-error
     (kbd "<leader>q")  #'flymake-show-buffer-diagnostics
-    (kbd "<leader>t")  #'my/project-todos
-    (kbd "<leader>T")  #'my/new-terminal
+    (kbd "<leader>t")  #'my/new-terminal
+    (kbd "<leader>T")  #'my/project-todos
     (kbd "<leader>H")  #'my/harpoon-add
     (kbd "<leader>h")  #'my/harpoon-menu
     (kbd "<leader>1")  (lambda () (interactive) (my/harpoon-jump 1))
@@ -445,19 +517,23 @@
     (kbd "<leader>3")  (lambda () (interactive) (my/harpoon-jump 3))
     (kbd "<leader>4")  (lambda () (interactive) (my/harpoon-jump 4))
     (kbd "<leader>5")  (lambda () (interactive) (my/harpoon-jump 5))
-    (kbd "<leader>}")  (lambda () (interactive) (my/harpoon-cycle 1))
-    (kbd "<leader>{")  (lambda () (interactive) (my/harpoon-cycle -1))
     (kbd "<leader>D")  #'dired-jump
     (kbd "<leader>ff") #'my/find-file
-    (kbd "<leader>fg") #'project-find-regexp
-    (kbd "<leader>fb") #'switch-to-buffer
+    (kbd "<leader>fg") #'consult-ripgrep
+    (kbd "<leader>fb") #'consult-buffer
+    (kbd "<leader>fl") #'consult-line
+    (kbd "<leader>fi") #'consult-imenu
     (kbd "<leader>fh") #'describe-symbol
     (kbd "<leader>Q")  (lambda () (interactive) (dired user-emacs-directory))
     (kbd "<leader>z")  (lambda () (interactive) (my/doc-pane 60))
     (kbd "<leader>Z")  (lambda () (interactive) (my/doc-pane 40))
     (kbd "<leader>o")  #'my/open-results
-    (kbd "<leader>n")  #'next-error
-    (kbd "<leader>p")  #'previous-error
+    (kbd "<leader>pp") #'project-switch-project
+    (kbd "<leader>pf") #'project-find-file
+    (kbd "<leader>pg") #'consult-ripgrep
+    (kbd "<leader>pd") #'project-dired
+    (kbd "<leader>pk") #'project-kill-buffers
+    (kbd "<leader>pb") #'consult-project-buffer
     (kbd "<leader>v")  #'my/markdown-toggle-preview
     (kbd "<leader>a")  #'org-agenda
     (kbd "<leader>c")  #'org-capture)

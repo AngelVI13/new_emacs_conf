@@ -7,13 +7,14 @@
 ;; display scaling (150% here) to Emacs, so scale it manually.
 (defvar my/font-family "Iosevka Term")
 (defvar my/font-size 14)
-(defvar my/display-scale 1.5)
+(defvar my/display-scale 1.0)
 
 ;; Set UI before the first frame is drawn to avoid flicker/resizing
 (setq default-frame-alist
       `((menu-bar-lines . 0)
         (tool-bar-lines . 0)
         (vertical-scroll-bars . nil)
+        (fullscreen . maximized)
         (font . ,(format "%s-%d" my/font-family
                          (round (* my/font-size my/display-scale))))))
 (menu-bar-mode -1)
