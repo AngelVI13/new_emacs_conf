@@ -1,0 +1,25 @@
+# Packages and compiled files (reinstalled/rebuilt automatically)
+elpa/
+eln-cache/
+tree-sitter/
+*.elc
+*.eln
+
+# Runtime state
+auto-save/
+auto-save-list/
+history
+projects.eld
+recentf
+bookmarks
+tramp
+transient/
+url/
+eshell/
+network-security.data
+custom.el
+
+# Editor backups / locks
+*~
+\#*\#
+.#*
