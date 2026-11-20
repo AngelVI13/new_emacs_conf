@@ -455,8 +455,12 @@
   (if (project-current) (project-find-file) (call-interactively #'find-file)))
 
 (defun my/new-terminal ()
+  "Open a new vterm in the project root, or the current directory outside a project."
   (interactive)
-  (vterm t))
+  (let ((default-directory (if-let* ((pr (project-current)))
+                               (project-root pr)
+                             default-directory)))
+    (vterm t)))
 
 ;;;; Evil (Vim keybindings)
 (use-package evil
