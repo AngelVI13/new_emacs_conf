@@ -128,6 +128,7 @@
 
 ;; Buffer words as a fallback source (like cmp-buffer)
 (defun my/add-dabbrev-capf ()
+  (require 'dabbrev)                  ; dabbrev-capf is not autoloaded
   (add-hook 'completion-at-point-functions #'dabbrev-capf 90 t))
 (add-hook 'prog-mode-hook #'my/add-dabbrev-capf)
 (add-hook 'text-mode-hook #'my/add-dabbrev-capf)
@@ -237,9 +238,10 @@
   (setq eglot-autoshutdown t
         eglot-extend-to-xref t
         eglot-events-buffer-config '(:size 0 :format full))
-  ;; ty + ruff together through rass, using the project's uv environment
+  ;; ty + ruff together through rass; bin/python-lsp prefers the project's .venv
   (add-to-list 'eglot-server-programs
-               '((python-mode python-ts-mode) . ("uv" "run" "rass" "python")))
+               `((python-mode python-ts-mode)
+                 . (,(expand-file-name "bin/python-lsp" user-emacs-directory))))
   (setq-default
    eglot-workspace-configuration
    '(:gopls (:analyses (:nilness t :unusedparams t :unusedwrite t :useany t

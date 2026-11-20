@@ -1,0 +1,15 @@
+#!/bin/sh
+# Python LSP launcher for Eglot: ty + ruff through rass.
+# Tools from the nearest .venv win; otherwise the global ones (uv tool install ty ruff rassumfrassum).
+dir=$PWD
+while [ "$dir" != / ]; do
+    if [ -x "$dir/.venv/bin/python" ]; then
+        export VIRTUAL_ENV="$dir/.venv"
+        PATH="$VIRTUAL_ENV/bin:$PATH"
+        break
+    fi
+    dir=$(dirname "$dir")
+done
+PATH="$PATH:$HOME/.local/bin"
+export PATH
+exec rass python "$@"

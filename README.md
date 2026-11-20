@@ -62,7 +62,7 @@ under systemd. Enable lingering: `sudo loginctl enable-linger $USER`.
 | `rg`, `fd` | project search / file finding (consult-ripgrep, project.el) |
 | `aspell`, `aspell-en` | spell checking (flyspell) |
 | `emacs-lsp-booster` | faster LSP I/O (eglot-booster) |
-| `uv` + `rass`, project `ty`/`ruff` | Python LSP (`uv run rass python`) |
+| `rass`, `ty`, `ruff` (`uv tool install rassumfrassum ty ruff`) | Python LSP via `bin/python-lsp`; a project's `.venv` versions take precedence |
 | `gopls`, `gofumpt`, `golines` | Go LSP and formatting |
 | `ocamllsp`, `ocamlformat`, `utop`, `dune` | OCaml (via opam) |
 | `prettier` | HTML/CSS/JS format on save |
