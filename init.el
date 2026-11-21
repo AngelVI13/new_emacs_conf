@@ -544,6 +544,10 @@
     (kbd "<leader>a")  #'org-agenda
     (kbd "<leader>c")  #'org-capture)
 
+  ;; G commands
+  (evil-define-key '(normal visual) 'global
+    (kbd "gc") #'comment-or-uncomment-region)
+
   ;; LSP keys, active only in Eglot-managed buffers
   (evil-define-key 'normal eglot-mode-map
     (kbd "gD") #'eglot-find-declaration
