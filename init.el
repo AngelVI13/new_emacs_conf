@@ -374,7 +374,8 @@
 (use-package vterm
   :commands vterm
   :init
-  (setq vterm-always-compile-module t)
+  (setq vterm-always-compile-module t
+        vterm-max-scrollback 10000)
   :hook (vterm-mode . (lambda () (display-line-numbers-mode -1))))
 
 ;;;; Harpoon (native replacement: 5 file slots saved across sessions)
