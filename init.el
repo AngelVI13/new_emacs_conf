@@ -551,7 +551,8 @@
 
   ;; G commands
   (evil-define-key '(normal visual) 'global
-    (kbd "gc") #'comment-or-uncomment-region)
+    (kbd "gc") #'comment-or-uncomment-region
+    (kbd "<leader>G") #'magit-status)
 
   ;; LSP keys, active only in Eglot-managed buffers
   (evil-define-key 'normal eglot-mode-map
