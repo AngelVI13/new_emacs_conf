@@ -95,6 +95,9 @@
 (setq go-ts-mode-indent-offset 4)
 (add-hook 'go-ts-mode-hook (lambda () (setq-local indent-tabs-mode t)))
 
+;;;; Magit
+(use-package magit)
+
 ;;;; Completion
 (fido-vertical-mode 1)                ; minibuffer: files, buffers, commands
 (setq completions-format 'one-column
