@@ -375,6 +375,7 @@
   :commands vterm
   :init
   (setq vterm-always-compile-module t
+        vterm-buffer-name-string "*vterm: %s*"
         vterm-max-scrollback 10000)
   :hook (vterm-mode . (lambda () (display-line-numbers-mode -1))))
 
